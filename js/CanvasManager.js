@@ -3,10 +3,11 @@
  */
 
 export class CanvasManager {
-    constructor(dataManager, historyManager, layerManager) {
+    constructor(dataManager, historyManager, layerManager, imageManager) {
         this.dataManager = dataManager;
         this.historyManager = historyManager;
         this.layerManager = layerManager;
+        this.imageManager = imageManager;
 
         this.currentPageId = null;
         this.selectedElements = new Set();
@@ -149,7 +150,9 @@ export class CanvasManager {
             case 'image':
                 div.classList.add('element-image');
                 const img = document.createElement('img');
-                img.src = element.src || '';
+                // Get the object URL from ImageManager
+                const imageUrl = this.imageManager.getImageUrl(element.src);
+                img.src = imageUrl || element.src || '';
                 img.alt = element.alt || '';
                 div.appendChild(img);
                 break;

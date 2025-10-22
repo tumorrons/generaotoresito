@@ -20,7 +20,7 @@ class VisualHTMLEditor {
         this.imageManager = new ImageManager(this.dataManager);
         this.layerManager = new LayerManager(this.dataManager, this.historyManager);
         this.componentManager = new ComponentManager(this.dataManager);
-        this.canvasManager = new CanvasManager(this.dataManager, this.historyManager, this.layerManager);
+        this.canvasManager = new CanvasManager(this.dataManager, this.historyManager, this.layerManager, this.imageManager);
         this.exportManager = new ExportManager(this.dataManager, this.imageManager);
         this.ui = new UIController(this);
 
