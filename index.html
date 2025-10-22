@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual HTML Site Editor - Editor Visuale per Siti Web</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/editor.css">
+    <link rel="stylesheet" href="css/canvas.css">
+</head>
+<body>
+    <!-- Top Toolbar -->
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <h1 class="app-title">Visual HTML Site Editor</h1>
+            <div class="file-controls">
+                <button id="newProjectBtn" class="btn btn-primary" title="Nuovo Progetto">Nuovo</button>
+                <button id="saveProjectBtn" class="btn btn-success" title="Salva Progetto">Salva</button>
+                <button id="loadProjectBtn" class="btn btn-info" title="Carica Progetto">Carica</button>
+                <input type="file" id="loadProjectInput" accept=".json" style="display: none;">
+            </div>
+        </div>
+
+        <div class="toolbar-center">
+            <div class="undo-redo-controls">
+                <button id="undoBtn" class="btn btn-icon" title="Annulla (Ctrl+Z)" disabled>↶</button>
+                <button id="redoBtn" class="btn btn-icon" title="Ripeti (Ctrl+Y)" disabled>↷</button>
+            </div>
+        </div>
+
+        <div class="toolbar-right">
+            <div class="file-weight-indicator">
+                <span id="fileWeightLabel">Peso: 0 KB</span>
+            </div>
+            <button id="exportSiteBtn" class="btn btn-export">Esporta Sito</button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Left Sidebar - Pages & Components -->
+        <div class="sidebar sidebar-left">
+            <div class="sidebar-tabs">
+                <button class="sidebar-tab active" data-tab="pages">Pagine</button>
+                <button class="sidebar-tab" data-tab="components">Componenti</button>
+            </div>
+
+            <!-- Pages Panel -->
+            <div class="sidebar-panel active" id="pagesPanel">
+                <div class="panel-header">
+                    <h3>Gestione Pagine</h3>
+                    <button id="addPageBtn" class="btn btn-small btn-success">+ Aggiungi Pagina</button>
+                </div>
+                <div class="pages-list" id="pagesList">
+                    <!-- Pages will be dynamically added here -->
+                </div>
+            </div>
+
+            <!-- Shared Components Panel -->
+            <div class="sidebar-panel" id="componentsPanel">
+                <div class="panel-header">
+                    <h3>Componenti Condivisi</h3>
+                    <button id="addComponentBtn" class="btn btn-small btn-success">+ Nuovo Componente</button>
+                </div>
+                <div class="components-list" id="componentsList">
+                    <!-- Shared components will be added here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Center - Canvas Area -->
+        <div class="canvas-container">
+            <div class="canvas-toolbar">
+                <div class="canvas-tools">
+                    <button id="addTextBtn" class="tool-btn" title="Aggiungi Testo">T</button>
+                    <button id="addImageBtn" class="tool-btn" title="Aggiungi Immagine">🖼</button>
+                    <button id="addSectionBtn" class="tool-btn" title="Aggiungi Sezione">📦</button>
+                    <button id="addButtonBtn" class="tool-btn" title="Aggiungi Pulsante">⏺</button>
+                    <input type="file" id="imageUploadInput" accept="image/*" multiple style="display: none;">
+                </div>
+
+                <div class="alignment-tools">
+                    <button id="alignLeftBtn" class="tool-btn" title="Allinea a sinistra">⫷</button>
+                    <button id="alignCenterBtn" class="tool-btn" title="Allinea al centro">≡</button>
+                    <button id="alignRightBtn" class="tool-btn" title="Allinea a destra">⫸</button>
+                    <button id="alignTopBtn" class="tool-btn" title="Allinea in alto">⫶</button>
+                    <button id="alignMiddleBtn" class="tool-btn" title="Allinea al centro verticale">☰</button>
+                    <button id="alignBottomBtn" class="tool-btn" title="Allinea in basso">⫻</button>
+                </div>
+
+                <div class="layer-tools">
+                    <button id="bringToFrontBtn" class="tool-btn" title="Porta in primo piano">⬆⬆</button>
+                    <button id="bringForwardBtn" class="tool-btn" title="Porta avanti">⬆</button>
+                    <button id="sendBackwardBtn" class="tool-btn" title="Porta indietro">⬇</button>
+                    <button id="sendToBackBtn" class="tool-btn" title="Porta in fondo">⬇⬇</button>
+                </div>
+
+                <div class="element-actions">
+                    <button id="groupBtn" class="tool-btn" title="Raggruppa">⊞</button>
+                    <button id="ungroupBtn" class="tool-btn" title="Separa">⊟</button>
+                    <button id="lockBtn" class="tool-btn" title="Blocca/Sblocca">🔒</button>
+                    <button id="duplicateBtn" class="tool-btn" title="Duplica">📋</button>
+                    <button id="deleteBtn" class="tool-btn" title="Elimina">🗑</button>
+                </div>
+            </div>
+
+            <div class="canvas-viewport">
+                <div class="canvas" id="canvas">
+                    <!-- Elements will be rendered here -->
+                    <div class="canvas-placeholder">
+                        <p>Seleziona una pagina per iniziare</p>
+                        <p class="sub-text">oppure crea una nuova pagina dal pannello a sinistra</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="canvas-info">
+                <span id="canvasZoom">100%</span>
+                <span id="canvasInfo">Nessun elemento selezionato</span>
+            </div>
+        </div>
+
+        <!-- Right Sidebar - Properties & Layers -->
+        <div class="sidebar sidebar-right">
+            <div class="sidebar-tabs">
+                <button class="sidebar-tab active" data-tab="properties">Proprietà</button>
+                <button class="sidebar-tab" data-tab="layers">Livelli</button>
+                <button class="sidebar-tab" data-tab="page-settings">Pagina</button>
+            </div>
+
+            <!-- Properties Panel -->
+            <div class="sidebar-panel active" id="propertiesPanel">
+                <div class="panel-header">
+                    <h3>Proprietà Elemento</h3>
+                </div>
+                <div class="properties-content" id="propertiesContent">
+                    <p class="empty-state">Seleziona un elemento per modificarne le proprietà</p>
+                </div>
+            </div>
+
+            <!-- Layers Panel -->
+            <div class="sidebar-panel" id="layersPanel">
+                <div class="panel-header">
+                    <h3>Gerarchia Livelli</h3>
+                </div>
+                <div class="layers-list" id="layersList">
+                    <p class="empty-state">Nessun livello disponibile</p>
+                </div>
+            </div>
+
+            <!-- Page Settings Panel -->
+            <div class="sidebar-panel" id="pageSettingsPanel">
+                <div class="panel-header">
+                    <h3>Impostazioni Pagina</h3>
+                </div>
+                <div class="page-settings-content" id="pageSettingsContent">
+                    <p class="empty-state">Seleziona una pagina</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- New Page Modal -->
+    <div class="modal" id="newPageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Nuova Pagina</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nome Pagina</label>
+                    <input type="text" id="newPageName" placeholder="es. contatti.html">
+                </div>
+                <div class="form-group">
+                    <label>Titolo Pagina</label>
+                    <input type="text" id="newPageTitle" placeholder="es. Contatti">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-dismiss="modal">Annulla</button>
+                <button class="btn btn-primary" id="confirmNewPage">Crea Pagina</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Component Modal -->
+    <div class="modal" id="newComponentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Nuovo Componente Condiviso</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nome Componente</label>
+                    <input type="text" id="newComponentName" placeholder="es. header-principale">
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select id="newComponentType">
+                        <option value="header">Header</option>
+                        <option value="menu">Menu</option>
+                        <option value="footer">Footer</option>
+                        <option value="custom">Personalizzato</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-dismiss="modal">Annulla</button>
+                <button class="btn btn-primary" id="confirmNewComponent">Crea Componente</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Settings Modal -->
+    <div class="modal" id="exportModal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Esporta Sito</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="export-info">
+                    <h3>Il sito verrà esportato con la seguente struttura:</h3>
+                    <ul>
+                        <li>📁 site/
+                            <ul>
+                                <li>📄 index.html, contatti.html, ... (file HTML delle pagine)</li>
+                                <li>📁 images/ (tutte le immagini del sito)</li>
+                                <li>📁 assets/
+                                    <ul>
+                                        <li>📄 site.css (stili condivisi)</li>
+                                        <li>📄 site.js (script condivisi)</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="exportOptimize" checked>
+                        Ottimizza HTML e CSS
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="exportCompress" checked>
+                        Comprimi immagini (qualità 85%)
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-dismiss="modal">Annulla</button>
+                <button class="btn btn-primary" id="confirmExport">Esporta</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <!-- JavaScript Modules -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
