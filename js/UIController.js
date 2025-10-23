@@ -199,6 +199,121 @@ export class UIController {
         document.querySelectorAll('.page-item').forEach(item => {
             item.classList.toggle('active', item.dataset.pageId === pageId);
         });
+
+        // Carica le impostazioni pagina
+        this.renderPageSettings(pageId);
+    }
+
+    /**
+     * Renderizza le impostazioni della pagina
+     */
+    renderPageSettings(pageId) {
+        const container = document.getElementById('pageSettingsContent');
+        if (!container) return;
+
+        const page = this.app.dataManager.getPage(pageId);
+        if (!page) {
+            container.innerHTML = '<p class="empty-state">Seleziona una pagina</p>';
+            return;
+        }
+
+        const canvasWidth = page.canvasWidth || 1200;
+        const canvasHeight = page.canvasHeight || 800;
+
+        const html = `
+            <div class="property-group">
+                <h4>Dimensioni Canvas</h4>
+                <div class="property-row">
+                    <div class="property-field">
+                        <label>Larghezza (px)</label>
+                        <input type="number" id="page-width" value="${canvasWidth}" min="320" max="3000" step="10" />
+                    </div>
+                    <div class="property-field">
+                        <label>Altezza (px)</label>
+                        <input type="number" id="page-height" value="${canvasHeight}" min="400" max="5000" step="10" />
+                    </div>
+                </div>
+                <div class="property-field mt-2">
+                    <label>Preset comuni</label>
+                    <select id="page-size-preset">
+                        <option value="">Personalizzato</option>
+                        <option value="1920,1080">Full HD (1920×1080)</option>
+                        <option value="1200,800">Desktop (1200×800)</option>
+                        <option value="768,1024">Tablet (768×1024)</option>
+                        <option value="375,667">Mobile (375×667)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="property-group">
+                <h4>Sfondo Pagina</h4>
+                <div class="property-field">
+                    <label>Tipo Sfondo</label>
+                    <select id="page-bg-type">
+                        <option value="color" ${page.background?.type === 'color' ? 'selected' : ''}>Colore</option>
+                        <option value="gradient" ${page.background?.type === 'gradient' ? 'selected' : ''}>Gradiente</option>
+                        <option value="image" ${page.background?.type === 'image' ? 'selected' : ''}>Immagine</option>
+                    </select>
+                </div>
+                <div class="property-field" id="bg-color-field" style="display: ${page.background?.type !== 'gradient' && page.background?.type !== 'image' ? 'block' : 'none'};">
+                    <label>Colore</label>
+                    <input type="color" id="page-bg-color" value="${page.background?.value || '#ffffff'}" />
+                </div>
+            </div>
+
+            <div class="property-actions">
+                <button class="btn btn-primary" id="apply-page-settings">Applica</button>
+            </div>
+        `;
+
+        container.innerHTML = html;
+
+        // Event listeners
+        document.getElementById('page-size-preset')?.addEventListener('change', (e) => {
+            if (e.target.value) {
+                const [width, height] = e.target.value.split(',');
+                document.getElementById('page-width').value = width;
+                document.getElementById('page-height').value = height;
+            }
+        });
+
+        document.getElementById('page-bg-type')?.addEventListener('change', (e) => {
+            const bgColorField = document.getElementById('bg-color-field');
+            const type = e.target.value;
+            bgColorField.style.display = (type !== 'gradient' && type !== 'image') ? 'block' : 'none';
+        });
+
+        document.getElementById('apply-page-settings')?.addEventListener('click', () => {
+            this.applyPageSettings(pageId);
+        });
+    }
+
+    /**
+     * Applica le impostazioni della pagina
+     */
+    applyPageSettings(pageId) {
+        const width = parseInt(document.getElementById('page-width').value);
+        const height = parseInt(document.getElementById('page-height').value);
+        const bgType = document.getElementById('page-bg-type').value;
+        const bgColor = document.getElementById('page-bg-color').value;
+
+        // Aggiorna dimensioni canvas
+        this.app.canvasManager.setCanvasSize(width, height);
+
+        // Aggiorna background
+        const page = this.app.dataManager.getPage(pageId);
+        if (page) {
+            page.background = page.background || {};
+            page.background.type = bgType;
+            if (bgType === 'color') {
+                page.background.value = bgColor;
+            }
+            this.app.dataManager.markModified();
+        }
+
+        // Ri-renderizza
+        this.app.canvasManager.render();
+        this.showNotification('Impostazioni pagina aggiornate', 'success');
     }
 
     /**

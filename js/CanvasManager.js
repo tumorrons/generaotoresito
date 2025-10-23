@@ -21,6 +21,9 @@ export class CanvasManager {
         this.snapThreshold = 10;
         this.gridSize = 10;
         this.showGrid = false;
+        this.zoomLevel = 1; // 1 = 100%
+        this.canvasWidth = 1200; // Default width
+        this.canvasHeight = 800; // Default height
     }
 
     /**
@@ -53,6 +56,21 @@ export class CanvasManager {
         this.currentPageId = pageId;
         this.currentComponentId = null; // Reset component editing mode
         this.selectedElements.clear();
+
+        // Carica le dimensioni della pagina se presenti
+        const page = this.dataManager.getPage(pageId);
+        if (page) {
+            const width = page.canvasWidth || 1200;
+            const height = page.canvasHeight || 800;
+            this.canvasWidth = width;
+            this.canvasHeight = height;
+
+            if (this.canvas) {
+                this.canvas.style.width = `${width}px`;
+                this.canvas.style.minHeight = `${height}px`;
+            }
+        }
+
         this.render();
     }
 
@@ -712,5 +730,92 @@ export class CanvasManager {
 
         // Altrimenti aggiungi alla pagina
         return this.dataManager.addElement(this.currentPageId, element);
+    }
+
+    /**
+     * Imposta il livello di zoom
+     */
+    setZoom(level) {
+        this.zoomLevel = Math.max(0.25, Math.min(2, level)); // Limita tra 25% e 200%
+        this.applyZoom();
+        this.updateZoomDisplay();
+    }
+
+    /**
+     * Aumenta zoom
+     */
+    zoomIn() {
+        const levels = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
+        const currentIndex = levels.findIndex(l => l >= this.zoomLevel);
+        const nextIndex = Math.min(currentIndex + 1, levels.length - 1);
+        this.setZoom(levels[nextIndex]);
+    }
+
+    /**
+     * Riduci zoom
+     */
+    zoomOut() {
+        const levels = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
+        const currentIndex = levels.findIndex(l => l >= this.zoomLevel);
+        const prevIndex = Math.max(currentIndex - 1, 0);
+        this.setZoom(levels[prevIndex]);
+    }
+
+    /**
+     * Adatta alla finestra
+     */
+    zoomToFit() {
+        const viewport = this.canvas.parentElement;
+        const viewportWidth = viewport.clientWidth - 80; // Padding
+        const viewportHeight = viewport.clientHeight - 80;
+
+        const scaleX = viewportWidth / this.canvasWidth;
+        const scaleY = viewportHeight / this.canvasHeight;
+        const scale = Math.min(scaleX, scaleY, 1); // Max 100%
+
+        this.setZoom(scale);
+    }
+
+    /**
+     * Applica lo zoom al canvas
+     */
+    applyZoom() {
+        if (this.canvas) {
+            this.canvas.style.transform = `scale(${this.zoomLevel})`;
+            this.canvas.style.transformOrigin = 'top center';
+        }
+    }
+
+    /**
+     * Aggiorna il display dello zoom
+     */
+    updateZoomDisplay() {
+        const zoomDisplay = document.getElementById('canvasZoom');
+        if (zoomDisplay) {
+            zoomDisplay.textContent = `${Math.round(this.zoomLevel * 100)}%`;
+        }
+    }
+
+    /**
+     * Imposta le dimensioni del canvas
+     */
+    setCanvasSize(width, height) {
+        this.canvasWidth = width;
+        this.canvasHeight = height;
+
+        if (this.canvas) {
+            this.canvas.style.width = `${width}px`;
+            this.canvas.style.minHeight = `${height}px`;
+        }
+
+        // Salva nelle impostazioni della pagina se c'è una pagina corrente
+        if (this.currentPageId) {
+            const page = this.dataManager.getPage(this.currentPageId);
+            if (page) {
+                page.canvasWidth = width;
+                page.canvasHeight = height;
+                this.dataManager.markModified();
+            }
+        }
     }
 }

@@ -121,6 +121,19 @@ class VisualHTMLEditor {
             this.confirmExport();
         });
 
+        // Zoom controls
+        document.getElementById('zoomIn')?.addEventListener('click', () => {
+            this.canvasManager.zoomIn();
+        });
+
+        document.getElementById('zoomOut')?.addEventListener('click', () => {
+            this.canvasManager.zoomOut();
+        });
+
+        document.getElementById('zoomFit')?.addEventListener('click', () => {
+            this.canvasManager.zoomToFit();
+        });
+
         // Handle before unload
         window.addEventListener('beforeunload', (e) => {
             if (this.dataManager.isModified()) {
