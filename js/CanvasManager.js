@@ -76,6 +76,9 @@ export class CanvasManager {
             const elementDiv = this.createElement(element);
             this.canvas.appendChild(elementDiv);
         });
+
+        // Adjust canvas height based on content
+        this.adjustCanvasHeight(page);
     }
 
     /**
@@ -98,6 +101,28 @@ export class CanvasManager {
                 }
                 break;
         }
+    }
+
+    /**
+     * Aggiusta l'altezza del canvas in base al contenuto
+     */
+    adjustCanvasHeight(page) {
+        if (!page.elements || page.elements.length === 0) {
+            this.canvas.style.height = '800px';
+            return;
+        }
+
+        // Trova il punto più basso tra tutti gli elementi
+        let maxBottom = 800; // Altezza minima
+
+        page.elements.forEach(element => {
+            const bottom = (element.y || 0) + (element.height || 0) + 50; // +50px di margine
+            if (bottom > maxBottom) {
+                maxBottom = bottom;
+            }
+        });
+
+        this.canvas.style.height = `${maxBottom}px`;
     }
 
     /**

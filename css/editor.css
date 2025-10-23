@@ -78,9 +78,7 @@
     flex: 1;
     overflow: auto;
     padding: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: #e2e8f0;
 }
 
 .canvas {
@@ -90,6 +88,7 @@
     box-shadow: var(--shadow-lg);
     position: relative;
     border-radius: var(--radius-md);
+    margin: 0 auto;
 }
 
 .canvas-placeholder {
@@ -104,6 +103,30 @@
 .canvas-placeholder p {
     font-size: 16px;
     margin-bottom: 8px;
+}
+
+/* Canvas scroll indicator */
+.canvas-viewport {
+    position: relative;
+}
+
+.canvas-viewport::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+.canvas-viewport::-webkit-scrollbar-track {
+    background: #cbd5e1;
+    border-radius: 6px;
+}
+
+.canvas-viewport::-webkit-scrollbar-thumb {
+    background: #64748b;
+    border-radius: 6px;
+}
+
+.canvas-viewport::-webkit-scrollbar-thumb:hover {
+    background: #475569;
 }
 
 .canvas-placeholder .sub-text {
