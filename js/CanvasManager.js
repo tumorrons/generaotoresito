@@ -41,9 +41,11 @@ export class CanvasManager {
         if (!this.canvas) return;
 
         this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
-        this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
-        this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
         this.canvas.addEventListener('click', this.handleClick.bind(this));
+
+        // Mouse move e up su document per catturare eventi anche fuori dal canvas
+        document.addEventListener('mousemove', this.handleMouseMove.bind(this));
+        document.addEventListener('mouseup', this.handleMouseUp.bind(this));
 
         // Keyboard shortcuts
         document.addEventListener('keydown', this.handleKeyDown.bind(this));
@@ -501,6 +503,8 @@ export class CanvasManager {
         const element = e.target.closest('.canvas-element');
 
         if (handle) {
+            e.preventDefault();
+            e.stopPropagation();
             this.startResize(e, handle, element);
         } else if (element) {
             this.startDrag(e, element);
@@ -519,10 +523,10 @@ export class CanvasManager {
 
         this.isDragging = true;
 
-        // Ottieni le coordinate relative al canvas
+        // Ottieni le coordinate relative al canvas (considera lo zoom)
         const rect = this.canvas.getBoundingClientRect();
-        const canvasX = e.clientX - rect.left;
-        const canvasY = e.clientY - rect.top;
+        const canvasX = (e.clientX - rect.left) / this.zoomLevel;
+        const canvasY = (e.clientY - rect.top) / this.zoomLevel;
 
         // Salva l'offset del mouse rispetto alla posizione visuale dell'elemento
         const adjustedY = el.y + (this.yOffset || 0);
@@ -561,10 +565,10 @@ export class CanvasManager {
 
         const elementId = Array.from(this.selectedElements)[0];
 
-        // Coordinate relative al canvas
+        // Coordinate relative al canvas (considera lo zoom)
         const rect = this.canvas.getBoundingClientRect();
-        const canvasX = e.clientX - rect.left;
-        const canvasY = e.clientY - rect.top;
+        const canvasX = (e.clientX - rect.left) / this.zoomLevel;
+        const canvasY = (e.clientY - rect.top) / this.zoomLevel;
 
         // Calcola la nuova posizione
         let newX = canvasX - this.dragStartPos.x;
@@ -597,8 +601,121 @@ export class CanvasManager {
      * Gestisce il resize
      */
     resize(e) {
-        // Simplified resize implementation
-        // Full implementation would handle all 8 resize handles
+        if (!this.isResizing || this.selectedElements.size === 0) return;
+
+        const elementId = Array.from(this.selectedElements)[0];
+
+        // Ottieni l'elemento
+        let element;
+        if (this.currentPageId) {
+            const page = this.dataManager.getPage(this.currentPageId);
+            element = page?.elements.find(el => el.id === elementId);
+        } else if (this.currentComponentId) {
+            const component = this.componentManager.getComponent(this.currentComponentId);
+            element = component?.elements.find(el => el.id === elementId);
+        }
+
+        if (!element) return;
+
+        // Calcola il delta del movimento (considera lo zoom)
+        const deltaX = (e.clientX - this.dragStartPos.x) / this.zoomLevel;
+        const deltaY = (e.clientY - this.dragStartPos.y) / this.zoomLevel;
+
+        // Valori originali
+        const originalX = element.x || 0;
+        const originalY = element.y || 0;
+        const originalWidth = element.width || 100;
+        const originalHeight = element.height || 100;
+
+        // Nuovi valori (inizialmente uguali agli originali)
+        let newX = originalX;
+        let newY = originalY;
+        let newWidth = originalWidth;
+        let newHeight = originalHeight;
+
+        // Applica il ridimensionamento in base all'handle
+        switch (this.resizeHandle) {
+            case 'nw': // Nord-Ovest
+                newX = originalX + deltaX;
+                newY = originalY + deltaY;
+                newWidth = originalWidth - deltaX;
+                newHeight = originalHeight - deltaY;
+                break;
+
+            case 'n': // Nord
+                newY = originalY + deltaY;
+                newHeight = originalHeight - deltaY;
+                break;
+
+            case 'ne': // Nord-Est
+                newY = originalY + deltaY;
+                newWidth = originalWidth + deltaX;
+                newHeight = originalHeight - deltaY;
+                break;
+
+            case 'e': // Est
+                newWidth = originalWidth + deltaX;
+                break;
+
+            case 'se': // Sud-Est
+                newWidth = originalWidth + deltaX;
+                newHeight = originalHeight + deltaY;
+                break;
+
+            case 's': // Sud
+                newHeight = originalHeight + deltaY;
+                break;
+
+            case 'sw': // Sud-Ovest
+                newX = originalX + deltaX;
+                newWidth = originalWidth - deltaX;
+                newHeight = originalHeight + deltaY;
+                break;
+
+            case 'w': // Ovest
+                newX = originalX + deltaX;
+                newWidth = originalWidth - deltaX;
+                break;
+        }
+
+        // Limita le dimensioni minime
+        const minWidth = 20;
+        const minHeight = 20;
+
+        if (newWidth < minWidth) {
+            newWidth = minWidth;
+            // Ripristina X se necessario
+            if (this.resizeHandle.includes('w')) {
+                newX = originalX + originalWidth - minWidth;
+            }
+        }
+
+        if (newHeight < minHeight) {
+            newHeight = minHeight;
+            // Ripristina Y se necessario
+            if (this.resizeHandle.includes('n')) {
+                newY = originalY + originalHeight - minHeight;
+            }
+        }
+
+        // Aggiorna l'elemento
+        const updates = {
+            x: Math.round(newX),
+            y: Math.round(newY),
+            width: Math.round(newWidth),
+            height: Math.round(newHeight)
+        };
+
+        if (this.currentComponentId) {
+            this.componentManager.updateComponentElement(this.currentComponentId, elementId, updates);
+            this.renderComponent();
+        } else {
+            this.dataManager.updateElement(this.currentPageId, elementId, updates);
+            this.render();
+        }
+
+        // Aggiorna la posizione di partenza per il prossimo movimento
+        this.dragStartPos = { x: e.clientX, y: e.clientY };
     }
 
     /**
