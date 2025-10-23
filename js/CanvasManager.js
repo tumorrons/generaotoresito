@@ -502,7 +502,14 @@ export class CanvasManager {
         const handle = e.target.closest('.resize-handle');
         const element = e.target.closest('.canvas-element');
 
+        console.log('👆 handleMouseDown', {
+            target: e.target.className,
+            hasHandle: !!handle,
+            hasElement: !!element
+        });
+
         if (handle) {
+            console.log('✅ Handle trovato, avvio resize');
             e.preventDefault();
             e.stopPropagation();
             this.startResize(e, handle, element);
@@ -541,9 +548,22 @@ export class CanvasManager {
      * Inizia il resize
      */
     startResize(e, handle, element) {
+        console.log('🔧 startResize chiamato', {
+            handle: handle.dataset.handle,
+            element: element.dataset.id
+        });
+
         this.isResizing = true;
         this.resizeHandle = handle.dataset.handle;
         this.dragStartPos = { x: e.clientX, y: e.clientY };
+
+        // Seleziona l'elemento se non lo è già
+        const elementId = element.dataset.id;
+        if (!this.selectedElements.has(elementId)) {
+            this.selectedElements.clear();
+            this.selectedElements.add(elementId);
+            this.render();
+        }
     }
 
     /**
