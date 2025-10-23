@@ -228,8 +228,9 @@ export class UIController {
                     <div class="component-item-type">${this.getComponentTypeLabel(component.type)}</div>
                 </div>
                 <div class="page-item-actions">
-                    <button class="page-item-btn" onclick="window.app.ui.editComponent('${component.id}')">✏️</button>
-                    <button class="page-item-btn" onclick="window.app.ui.deleteComponent('${component.id}')">🗑️</button>
+                    <button class="page-item-btn" onclick="window.app.ui.addComponentToCurrentPage('${component.id}')" title="Aggiungi alla pagina">➕</button>
+                    <button class="page-item-btn" onclick="window.app.ui.editComponent('${component.id}')" title="Modifica">✏️</button>
+                    <button class="page-item-btn" onclick="window.app.ui.deleteComponent('${component.id}')" title="Elimina">🗑️</button>
                 </div>
             </div>
         `).join('');
@@ -246,6 +247,29 @@ export class UIController {
             'custom': '🎨 Personalizzato'
         };
         return labels[type] || type;
+    }
+
+    /**
+     * Aggiunge un componente alla pagina corrente
+     */
+    addComponentToCurrentPage(componentId) {
+        const currentPage = this.app.canvasManager.currentPageId;
+
+        if (!currentPage) {
+            this.showNotification('Seleziona prima una pagina', 'error');
+            return;
+        }
+
+        // Aggiungi il componente al centro del canvas
+        const position = { x: 100, y: 100 };
+        const instance = this.app.componentManager.addComponentToPage(currentPage, componentId, position);
+
+        if (instance) {
+            this.app.canvasManager.render();
+            this.showNotification('Componente aggiunto alla pagina', 'success');
+        } else {
+            this.showNotification('Errore nell\'aggiunta del componente', 'error');
+        }
     }
 
     /**

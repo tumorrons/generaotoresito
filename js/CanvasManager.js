@@ -3,11 +3,12 @@
  */
 
 export class CanvasManager {
-    constructor(dataManager, historyManager, layerManager, imageManager) {
+    constructor(dataManager, historyManager, layerManager, imageManager, componentManager) {
         this.dataManager = dataManager;
         this.historyManager = historyManager;
         this.layerManager = layerManager;
         this.imageManager = imageManager;
+        this.componentManager = componentManager;
 
         this.currentPageId = null;
         this.selectedElements = new Set();
@@ -230,7 +231,108 @@ export class CanvasManager {
                 div.classList.add('element-section');
                 div.style.backgroundColor = element.bgColor || 'transparent';
                 break;
+
+            case 'component-instance':
+                div.classList.add('element-component');
+                const component = this.componentManager.getComponent(element.componentId);
+
+                if (component) {
+                    // Crea un header per il componente
+                    const header = document.createElement('div');
+                    header.className = 'component-header';
+                    header.innerHTML = `
+                        <span class="component-icon">${this.getComponentIcon(component.type)}</span>
+                        <span class="component-name">${component.name}</span>
+                    `;
+                    div.appendChild(header);
+
+                    // Renderizza gli elementi del componente
+                    const componentsContainer = document.createElement('div');
+                    componentsContainer.className = 'component-elements';
+
+                    if (component.elements && component.elements.length > 0) {
+                        component.elements.forEach(compElement => {
+                            const elementDiv = this.createComponentElement(compElement, element.overrides);
+                            componentsContainer.appendChild(elementDiv);
+                        });
+                    } else {
+                        componentsContainer.innerHTML = '<p style="padding: 10px; color: #999; text-align: center;">Componente vuoto<br><small>Clicca ✏️ per modificare</small></p>';
+                    }
+
+                    div.appendChild(componentsContainer);
+                } else {
+                    div.innerHTML = '<p style="padding: 10px; color: red;">Componente non trovato</p>';
+                }
+
+                div.style.border = '2px dashed #3b82f6';
+                div.style.backgroundColor = '#f0f9ff';
+                break;
         }
+    }
+
+    /**
+     * Ottiene l'icona del tipo di componente
+     */
+    getComponentIcon(type) {
+        const icons = {
+            'header': '📄',
+            'menu': '🔗',
+            'footer': '📌',
+            'custom': '🎨'
+        };
+        return icons[type] || '🎨';
+    }
+
+    /**
+     * Crea un elemento figlio del componente
+     */
+    createComponentElement(element, overrides = {}) {
+        const div = document.createElement('div');
+        div.className = 'component-child-element';
+        div.style.position = 'relative';
+        div.style.margin = '5px';
+        div.style.padding = '5px';
+        div.style.border = '1px solid #e5e7eb';
+        div.style.borderRadius = '4px';
+        div.style.backgroundColor = 'white';
+
+        // Applica override se presenti
+        const finalElement = { ...element, ...(overrides[element.id] || {}) };
+
+        // Renderizza in base al tipo
+        switch (finalElement.type) {
+            case 'text':
+                div.textContent = finalElement.text || 'Testo';
+                div.style.fontSize = `${finalElement.fontSize || 14}px`;
+                div.style.color = finalElement.color || '#000000';
+                break;
+
+            case 'image':
+                const img = document.createElement('img');
+                const imageUrl = this.imageManager.getImageUrl(finalElement.src);
+                img.src = imageUrl || finalElement.src || '';
+                img.style.maxWidth = '100%';
+                img.style.height = 'auto';
+                div.appendChild(img);
+                break;
+
+            case 'button':
+                div.textContent = finalElement.text || 'Button';
+                div.style.backgroundColor = finalElement.bgColor || '#2563eb';
+                div.style.color = finalElement.textColor || '#ffffff';
+                div.style.padding = '8px 16px';
+                div.style.borderRadius = '6px';
+                div.style.textAlign = 'center';
+                break;
+
+            case 'section':
+                div.style.backgroundColor = finalElement.bgColor || '#f3f4f6';
+                div.style.minHeight = '50px';
+                div.textContent = 'Sezione';
+                break;
+        }
+
+        return div;
     }
 
     /**
