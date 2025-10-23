@@ -302,6 +302,9 @@ class VisualHTMLEditor {
             this.ui.closeModal('newComponentModal');
             this.ui.showNotification('Componente creato con successo!', 'success');
 
+            // Cambia al tab componenti per mostrare il nuovo componente
+            this.ui.switchTab('components');
+
             // Aggiorna la lista dei componenti
             this.ui.renderComponentsList();
 

@@ -68,18 +68,30 @@ export class UIController {
     setupTabs() {
         document.querySelectorAll('.sidebar-tab').forEach(tab => {
             tab.addEventListener('click', () => {
-                const tabName = tab.dataset.tab;
-                const container = tab.closest('.sidebar');
-
-                // Remove active from all tabs and panels
-                container.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
-                container.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
-
-                // Add active to clicked tab and corresponding panel
-                tab.classList.add('active');
-                container.querySelector(`#${tabName}Panel`)?.classList.add('active');
+                this.switchTab(tab.dataset.tab, tab.closest('.sidebar'));
             });
         });
+    }
+
+    /**
+     * Cambia tab programmaticamente
+     */
+    switchTab(tabName, sidebar = null) {
+        // Se non è specificata la sidebar, cerca quella sinistra
+        if (!sidebar) {
+            sidebar = document.querySelector('.sidebar-left');
+        }
+
+        // Remove active from all tabs and panels
+        sidebar.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+        sidebar.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
+
+        // Add active to clicked tab and corresponding panel
+        const targetTab = sidebar.querySelector(`[data-tab="${tabName}"]`);
+        const targetPanel = sidebar.querySelector(`#${tabName}Panel`);
+
+        if (targetTab) targetTab.classList.add('active');
+        if (targetPanel) targetPanel.classList.add('active');
     }
 
     /**
@@ -194,7 +206,15 @@ export class UIController {
      */
     renderComponentsList() {
         const container = document.getElementById('componentsList');
+
+        if (!container) {
+            console.error('Container componentsList non trovato!');
+            return;
+        }
+
         const components = this.app.componentManager.getComponents();
+
+        console.log('Rendering components list:', components.length, 'components');
 
         if (components.length === 0) {
             container.innerHTML = '<p class="empty-state">Nessun componente condiviso. Crea il tuo primo componente!</p>';
