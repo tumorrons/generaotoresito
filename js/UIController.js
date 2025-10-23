@@ -16,6 +16,7 @@ export class UIController {
         this.setupTabs();
         this.setupToolbar();
         this.renderPagesList();
+        this.renderComponentsList();
         this.updateFileWeight();
     }
 
@@ -186,6 +187,64 @@ export class UIController {
         document.querySelectorAll('.page-item').forEach(item => {
             item.classList.toggle('active', item.dataset.pageId === pageId);
         });
+    }
+
+    /**
+     * Renderizza la lista dei componenti
+     */
+    renderComponentsList() {
+        const container = document.getElementById('componentsList');
+        const components = this.app.componentManager.getComponents();
+
+        if (components.length === 0) {
+            container.innerHTML = '<p class="empty-state">Nessun componente condiviso. Crea il tuo primo componente!</p>';
+            return;
+        }
+
+        container.innerHTML = components.map(component => `
+            <div class="component-item" data-component-id="${component.id}">
+                <div class="component-item-info">
+                    <div class="component-item-name">${component.name}</div>
+                    <div class="component-item-type">${this.getComponentTypeLabel(component.type)}</div>
+                </div>
+                <div class="page-item-actions">
+                    <button class="page-item-btn" onclick="window.app.ui.editComponent('${component.id}')">✏️</button>
+                    <button class="page-item-btn" onclick="window.app.ui.deleteComponent('${component.id}')">🗑️</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    /**
+     * Ottiene l'etichetta del tipo di componente
+     */
+    getComponentTypeLabel(type) {
+        const labels = {
+            'header': '📄 Header',
+            'menu': '🔗 Menu',
+            'footer': '📌 Footer',
+            'custom': '🎨 Personalizzato'
+        };
+        return labels[type] || type;
+    }
+
+    /**
+     * Modifica un componente
+     */
+    editComponent(componentId) {
+        this.showNotification('Funzione in sviluppo', 'info');
+        // TODO: Implementare editor componente
+    }
+
+    /**
+     * Elimina un componente
+     */
+    deleteComponent(componentId) {
+        if (confirm('Sei sicuro di voler eliminare questo componente?')) {
+            this.app.componentManager.deleteComponent(componentId);
+            this.renderComponentsList();
+            this.showNotification('Componente eliminato', 'success');
+        }
     }
 
     /**

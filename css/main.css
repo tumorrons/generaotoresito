@@ -349,11 +349,18 @@ body {
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: var(--transition);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .component-item:hover {
     background: #f1f5f9;
     border-color: var(--border-hover);
+}
+
+.component-item-info {
+    flex: 1;
 }
 
 .component-item-name {

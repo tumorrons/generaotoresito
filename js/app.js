@@ -300,7 +300,10 @@ class VisualHTMLEditor {
         try {
             this.componentManager.createComponent(name, type);
             this.ui.closeModal('newComponentModal');
-            this.ui.showNotification('Componente creato', 'success');
+            this.ui.showNotification('Componente creato con successo!', 'success');
+
+            // Aggiorna la lista dei componenti
+            this.ui.renderComponentsList();
 
             // Reset form
             document.getElementById('newComponentName').value = '';
