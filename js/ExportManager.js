@@ -84,6 +84,9 @@ export class ExportManager {
         const elements = this.renderElements(page.elements);
         const background = this.generateBackgroundCSS(page.background);
 
+        // Calcola l'altezza necessaria per il container
+        const containerHeight = this.calculateContainerHeight(page.elements);
+
         return `<!DOCTYPE html>
 <html lang="it">
 <head>
@@ -96,7 +99,7 @@ export class ExportManager {
     <link rel="stylesheet" href="assets/site.css">
 </head>
 <body style="${background}">
-    <div class="page-container">
+    <div class="page-container" style="min-height: ${containerHeight}px;">
         ${elements}
     </div>
     <script src="assets/site.js"></script>
@@ -105,9 +108,34 @@ export class ExportManager {
     }
 
     /**
+     * Calcola l'altezza necessaria del container
+     */
+    calculateContainerHeight(elements) {
+        if (!elements || elements.length === 0) {
+            return 800; // Default
+        }
+
+        let maxBottom = 800;
+
+        elements.forEach(el => {
+            const bottom = (el.y || 0) + (el.height || 0);
+            if (bottom > maxBottom) {
+                maxBottom = bottom;
+            }
+        });
+
+        // Aggiungi margine
+        return maxBottom + 100;
+    }
+
+    /**
      * Renderizza gli elementi della pagina
      */
     renderElements(elements) {
+        if (!elements || elements.length === 0) {
+            return '';
+        }
+
         const sorted = [...elements].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
 
         return sorted.map(el => {
@@ -116,24 +144,37 @@ export class ExportManager {
                 return this.renderComponentInstance(el);
             }
 
-            const style = `position: absolute; left: ${el.x}px; top: ${el.y}px; width: ${el.width}px; height: ${el.height}px; z-index: ${el.zIndex || 0};`;
+            // Prepara link se presente
+            const hasLink = el.link && (el.link.type === 'internal' || el.link.type === 'external');
+            const linkHref = hasLink ? (el.link.type === 'internal' ? el.link.href : el.link.url) : null;
+            const linkTarget = hasLink && el.link.type === 'external' ? 'target="_blank" rel="noopener"' : '';
+
+            const posStyle = `position: absolute; left: ${el.x}px; top: ${el.y}px; width: ${el.width}px; height: ${el.height}px; z-index: ${el.zIndex || 0};`;
 
             switch (el.type) {
                 case 'text':
-                    return `<div class="element-text" style="${style} font-size: ${el.fontSize || 16}px; color: ${el.color || '#000'}; font-family: ${el.fontFamily || 'Arial'};">${el.text || ''}</div>`;
+                    const textContent = `<div style="padding: 12px; font-size: ${el.fontSize || 16}px; color: ${el.color || '#000'}; font-family: ${el.fontFamily || 'Arial'}; word-wrap: break-word;">${el.text || ''}</div>`;
+
+                    if (hasLink && linkHref) {
+                        return `<a href="${linkHref}" ${linkTarget} class="element-text" style="${posStyle} text-decoration: none; display: block;">${textContent}</a>`;
+                    }
+                    return `<div class="element-text" style="${posStyle}">${textContent}</div>`;
 
                 case 'image':
-                    return `<div class="element-image" style="${style}">
-                        <img src="images/${el.src}" alt="${el.alt || ''}" style="width: 100%; height: 100%; object-fit: cover;">
-                    </div>`;
+                    const imageContent = `<img src="images/${el.src}" alt="${el.alt || ''}" style="width: 100%; height: 100%; object-fit: cover; display: block;">`;
+
+                    if (hasLink && linkHref) {
+                        return `<a href="${linkHref}" ${linkTarget} class="element-image" style="${posStyle} display: block; overflow: hidden;">${imageContent}</a>`;
+                    }
+                    return `<div class="element-image" style="${posStyle} overflow: hidden;">${imageContent}</div>`;
 
                 case 'button':
-                    const link = el.link ? (el.link.type === 'internal' ? el.link.href : el.link.url) : '#';
-                    const target = el.link && el.link.type === 'external' ? 'target="_blank" rel="noopener"' : '';
-                    return `<a href="${link}" ${target} class="element-button" style="${style} background: ${el.bgColor || '#2563eb'}; color: ${el.textColor || '#fff'}; font-size: ${el.fontSize || 14}px; text-decoration: none; display: flex; align-items: center; justify-content: center; border-radius: 6px;">${el.text || 'Button'}</a>`;
+                    const btnLink = el.link ? (el.link.type === 'internal' ? el.link.href : el.link.url) : '#';
+                    const btnTarget = el.link && el.link.type === 'external' ? 'target="_blank" rel="noopener"' : '';
+                    return `<a href="${btnLink}" ${btnTarget} class="element-button" style="${posStyle} background: ${el.bgColor || '#2563eb'}; color: ${el.textColor || '#fff'}; font-size: ${el.fontSize || 14}px; text-decoration: none; display: flex; align-items: center; justify-content: center; border-radius: 6px;">${el.text || 'Button'}</a>`;
 
                 case 'section':
-                    return `<div class="element-section" style="${style} background: ${el.bgColor || 'transparent'};"></div>`;
+                    return `<div class="element-section" style="${posStyle} background: ${el.bgColor || 'transparent'}; border: 1px solid transparent;"></div>`;
 
                 default:
                     return '';
