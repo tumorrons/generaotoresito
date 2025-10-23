@@ -306,6 +306,7 @@ export class CanvasManager {
                     // Crea un header per il componente
                     const header = document.createElement('div');
                     header.className = 'component-header';
+                    header.style.pointerEvents = 'none'; // Permetti click attraverso l'header
                     header.innerHTML = `
                         <span class="component-icon">${this.getComponentIcon(component.type)}</span>
                         <span class="component-name">${component.name}</span>
@@ -315,6 +316,7 @@ export class CanvasManager {
                     // Renderizza gli elementi del componente
                     const componentsContainer = document.createElement('div');
                     componentsContainer.className = 'component-elements';
+                    componentsContainer.style.pointerEvents = 'none'; // Permetti click attraverso gli elementi
 
                     if (component.elements && component.elements.length > 0) {
                         component.elements.forEach(compElement => {
@@ -330,8 +332,10 @@ export class CanvasManager {
                     div.innerHTML = '<p style="padding: 10px; color: red;">Componente non trovato</p>';
                 }
 
-                div.style.border = '2px dashed #3b82f6';
-                div.style.backgroundColor = '#f0f9ff';
+                // Stile più leggero per i componenti nelle pagine
+                div.style.border = '1px solid rgba(59, 130, 246, 0.3)';
+                div.style.backgroundColor = 'rgba(240, 249, 255, 0.3)';
+                div.style.overflow = 'hidden';
                 break;
         }
     }

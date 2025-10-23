@@ -457,36 +457,58 @@
 /* Component Instance Styles */
 .element-component {
     overflow: hidden;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+/* Componente in hover - mostra bordo più evidente */
+.canvas-element[data-type="component-instance"]:hover:not(.selected) {
+    border-color: rgba(59, 130, 246, 0.6) !important;
+    background-color: rgba(240, 249, 255, 0.5) !important;
+}
+
+/* Componente selezionato - mostra bordo completo */
+.canvas-element[data-type="component-instance"].selected {
+    border: 2px solid #3b82f6 !important;
+    background-color: rgba(240, 249, 255, 0.5) !important;
 }
 
 .component-header {
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: white;
-    padding: 8px 12px;
+    padding: 6px 10px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 14px;
+    gap: 6px;
+    font-size: 12px;
     font-weight: 600;
     border-bottom: 1px solid #2563eb;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+/* Header più visibile in hover */
+.canvas-element[data-type="component-instance"]:hover .component-header {
+    opacity: 1;
 }
 
 .component-icon {
-    font-size: 16px;
+    font-size: 14px;
 }
 
 .component-name {
     flex: 1;
+    font-size: 11px;
 }
 
 .component-elements {
-    background: white;
+    background: transparent;
     padding: 10px;
     min-height: 40px;
 }
 
 .component-child-element {
     transition: background-color 0.2s;
+    pointer-events: none;
 }
 
 .component-child-element:hover {
