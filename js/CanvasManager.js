@@ -303,16 +303,6 @@ export class CanvasManager {
                 const component = this.componentManager.getComponent(element.componentId);
 
                 if (component) {
-                    // Crea un header per il componente
-                    const header = document.createElement('div');
-                    header.className = 'component-header';
-                    header.style.pointerEvents = 'none'; // Permetti click attraverso l'header
-                    header.innerHTML = `
-                        <span class="component-icon">${this.getComponentIcon(component.type)}</span>
-                        <span class="component-name">${component.name}</span>
-                    `;
-                    div.appendChild(header);
-
                     // Renderizza gli elementi del componente
                     const componentsContainer = document.createElement('div');
                     componentsContainer.className = 'component-elements';
@@ -328,14 +318,20 @@ export class CanvasManager {
                     }
 
                     div.appendChild(componentsContainer);
+
+                    // Badge identificativo (visibile solo quando selezionato o in hover)
+                    const badge = document.createElement('div');
+                    badge.className = 'component-badge';
+                    badge.innerHTML = `${this.getComponentIcon(component.type)} ${component.name}`;
+                    div.appendChild(badge);
                 } else {
                     div.innerHTML = '<p style="padding: 10px; color: red;">Componente non trovato</p>';
                 }
 
-                // Stile più leggero per i componenti nelle pagine
-                div.style.border = '1px solid rgba(59, 130, 246, 0.3)';
-                div.style.backgroundColor = 'rgba(240, 249, 255, 0.3)';
-                div.style.overflow = 'hidden';
+                // Nessun bordo/background di default - invisibile
+                div.style.border = 'none';
+                div.style.backgroundColor = 'transparent';
+                div.style.overflow = 'visible';
                 break;
         }
     }
@@ -427,6 +423,10 @@ export class CanvasManager {
         if (!target) {
             this.selectedElements.clear();
             this.render();
+            // Notifica UIController che nessun elemento è selezionato
+            if (this.onSelectionChange) {
+                this.onSelectionChange(null);
+            }
             return;
         }
 
@@ -445,6 +445,34 @@ export class CanvasManager {
         }
 
         this.render();
+
+        // Notifica UIController che un elemento è selezionato
+        if (this.onSelectionChange && this.selectedElements.size === 1) {
+            const element = this.getSelectedElement();
+            if (element) {
+                this.onSelectionChange(element);
+            }
+        }
+    }
+
+    /**
+     * Ottiene l'elemento selezionato (se solo uno)
+     */
+    getSelectedElement() {
+        if (this.selectedElements.size !== 1) return null;
+
+        const elementId = Array.from(this.selectedElements)[0];
+
+        // Cerca nelle pagine o nei componenti
+        if (this.currentPageId) {
+            const page = this.dataManager.getPage(this.currentPageId);
+            return page?.elements.find(el => el.id === elementId);
+        } else if (this.currentComponentId) {
+            const component = this.componentManager.getComponent(this.currentComponentId);
+            return component?.elements.find(el => el.id === elementId);
+        }
+
+        return null;
     }
 
     /**

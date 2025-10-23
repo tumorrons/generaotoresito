@@ -384,4 +384,150 @@ export class UIController {
     editPage(pageId) {
         this.loadPage(pageId);
     }
+
+    /**
+     * Mostra le proprietà di un elemento
+     */
+    showElementProperties(element) {
+        const container = document.getElementById('propertiesContent');
+        if (!container) return;
+
+        if (!element) {
+            container.innerHTML = '<p class="empty-state">Seleziona un elemento per modificarne le proprietà</p>';
+            return;
+        }
+
+        // Ottieni le pagine per il dropdown link interni
+        const pages = this.app.dataManager.getPages();
+
+        const html = `
+            <div class="property-group">
+                <h4>Elemento: ${this.getElementTypeLabel(element.type)}</h4>
+            </div>
+
+            <div class="property-group">
+                <label>Posizione</label>
+                <div class="property-row">
+                    <div class="property-field">
+                        <label>X</label>
+                        <input type="number" id="prop-x" value="${element.x || 0}" />
+                    </div>
+                    <div class="property-field">
+                        <label>Y</label>
+                        <input type="number" id="prop-y" value="${element.y || 0}" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="property-group">
+                <label>Dimensioni</label>
+                <div class="property-row">
+                    <div class="property-field">
+                        <label>Larghezza</label>
+                        <input type="number" id="prop-width" value="${element.width || 0}" />
+                    </div>
+                    <div class="property-field">
+                        <label>Altezza</label>
+                        <input type="number" id="prop-height" value="${element.height || 0}" />
+                    </div>
+                </div>
+            </div>
+
+            ${element.type !== 'component-instance' ? `
+            <div class="property-group">
+                <h4>Link</h4>
+                <div class="property-field">
+                    <label>Tipo Link</label>
+                    <select id="prop-link-type">
+                        <option value="none" ${!element.link ? 'selected' : ''}>Nessun Link</option>
+                        <option value="internal" ${element.link?.type === 'internal' ? 'selected' : ''}>Pagina Interna</option>
+                        <option value="external" ${element.link?.type === 'external' ? 'selected' : ''}>URL Esterno</option>
+                    </select>
+                </div>
+
+                <div class="property-field" id="link-internal-field" style="display: ${element.link?.type === 'internal' ? 'block' : 'none'};">
+                    <label>Pagina</label>
+                    <select id="prop-link-page">
+                        <option value="">Seleziona pagina</option>
+                        ${pages.map(p => `<option value="${p.name}" ${element.link?.href === p.name ? 'selected' : ''}>${p.title || p.name}</option>`).join('')}
+                    </select>
+                </div>
+
+                <div class="property-field" id="link-external-field" style="display: ${element.link?.type === 'external' ? 'block' : 'none'};">
+                    <label>URL</label>
+                    <input type="url" id="prop-link-url" value="${element.link?.url || ''}" placeholder="https://example.com" />
+                </div>
+            </div>
+            ` : ''}
+
+            <div class="property-actions">
+                <button class="btn btn-primary" id="apply-properties">Applica</button>
+            </div>
+        `;
+
+        container.innerHTML = html;
+
+        // Event listeners
+        document.getElementById('prop-link-type')?.addEventListener('change', (e) => {
+            const type = e.target.value;
+            document.getElementById('link-internal-field').style.display = type === 'internal' ? 'block' : 'none';
+            document.getElementById('link-external-field').style.display = type === 'external' ? 'block' : 'none';
+        });
+
+        document.getElementById('apply-properties')?.addEventListener('click', () => {
+            this.applyElementProperties(element);
+        });
+    }
+
+    /**
+     * Applica le modifiche alle proprietà dell'elemento
+     */
+    applyElementProperties(element) {
+        const updates = {
+            x: parseInt(document.getElementById('prop-x').value),
+            y: parseInt(document.getElementById('prop-y').value),
+            width: parseInt(document.getElementById('prop-width').value),
+            height: parseInt(document.getElementById('prop-height').value)
+        };
+
+        // Gestione link
+        const linkType = document.getElementById('prop-link-type')?.value;
+        if (linkType === 'none') {
+            updates.link = null;
+        } else if (linkType === 'internal') {
+            const page = document.getElementById('prop-link-page').value;
+            if (page) {
+                updates.link = { type: 'internal', href: page };
+            }
+        } else if (linkType === 'external') {
+            const url = document.getElementById('prop-link-url').value;
+            if (url) {
+                updates.link = { type: 'external', url };
+            }
+        }
+
+        // Aggiorna l'elemento
+        if (this.app.canvasManager.currentPageId) {
+            this.app.dataManager.updateElement(this.app.canvasManager.currentPageId, element.id, updates);
+        } else if (this.app.canvasManager.currentComponentId) {
+            this.app.componentManager.updateComponentElement(this.app.canvasManager.currentComponentId, element.id, updates);
+        }
+
+        this.app.canvasManager.render();
+        this.showNotification('Proprietà aggiornate', 'success');
+    }
+
+    /**
+     * Ottiene l'etichetta del tipo di elemento
+     */
+    getElementTypeLabel(type) {
+        const labels = {
+            'text': '📝 Testo',
+            'image': '🖼 Immagine',
+            'button': '⏺ Pulsante',
+            'section': '📦 Sezione',
+            'component-instance': '🎨 Componente'
+        };
+        return labels[type] || type;
+    }
 }

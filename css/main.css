@@ -726,3 +726,73 @@ body {
 .hidden {
     display: none !important;
 }
+
+/* Properties Panel */
+.property-group {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.property-group:last-child {
+    border-bottom: none;
+}
+
+.property-group h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+
+.property-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.property-row {
+    display: flex;
+    gap: 10px;
+}
+
+.property-field {
+    flex: 1;
+}
+
+.property-field label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.property-field input[type="number"],
+.property-field input[type="text"],
+.property-field input[type="url"],
+.property-field select {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    background: white;
+    transition: border-color 0.2s;
+}
+
+.property-field input:focus,
+.property-field select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.property-actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 8px;
+}
+
+.property-actions .btn {
+    flex: 1;
+}

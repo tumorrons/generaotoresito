@@ -40,6 +40,11 @@ class VisualHTMLEditor {
         const canvas = document.getElementById('canvas');
         this.canvasManager.init(canvas);
 
+        // Setup canvas selection callback
+        this.canvasManager.onSelectionChange = (element) => {
+            this.ui.showElementProperties(element);
+        };
+
         // Setup event listeners
         this.setupEventListeners();
 
