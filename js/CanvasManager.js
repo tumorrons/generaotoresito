@@ -51,8 +51,19 @@ export class CanvasManager {
      */
     loadPage(pageId) {
         this.currentPageId = pageId;
+        this.currentComponentId = null; // Reset component editing mode
         this.selectedElements.clear();
         this.render();
+    }
+
+    /**
+     * Carica un componente per l'editing
+     */
+    loadComponent(componentId) {
+        this.currentComponentId = componentId;
+        this.currentPageId = null; // Reset page mode
+        this.selectedElements.clear();
+        this.renderComponent();
     }
 
     /**
@@ -83,6 +94,61 @@ export class CanvasManager {
 
         // Adjust canvas height based on content
         this.adjustCanvasHeight(page);
+    }
+
+    /**
+     * Renderizza il componente in modalità editing
+     */
+    renderComponent() {
+        if (!this.canvas || !this.currentComponentId) return;
+
+        const component = this.componentManager.getComponent(this.currentComponentId);
+        if (!component) return;
+
+        // Clear canvas
+        this.canvas.innerHTML = '';
+
+        // Add component editing header
+        const header = document.createElement('div');
+        header.className = 'component-editing-header';
+        header.innerHTML = `
+            <div style="background: #3b82f6; color: white; padding: 12px 20px; margin: -40px -40px 20px -40px; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 20px;">${this.getComponentIcon(component.type)}</span>
+                <span>Modifica Componente: ${component.name}</span>
+                <span style="margin-left: auto; font-size: 12px; opacity: 0.9;">Aggiungi elementi usando la toolbar sopra</span>
+            </div>
+        `;
+        this.canvas.appendChild(header);
+
+        // Apply neutral background
+        this.canvas.style.background = '#ffffff';
+
+        // Calculate Y offset for elements (treat component like a page)
+        const fakeComponent = { elements: component.elements || [] };
+        this.calculateYOffset(fakeComponent);
+
+        // Render elements
+        if (component.elements && component.elements.length > 0) {
+            // Sort by z-index
+            const sortedElements = [...component.elements].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+
+            sortedElements.reverse().forEach(element => {
+                const elementDiv = this.createElement(element);
+                this.canvas.appendChild(elementDiv);
+            });
+
+            this.adjustCanvasHeight(fakeComponent);
+        } else {
+            // Show placeholder for empty component
+            const placeholder = document.createElement('div');
+            placeholder.className = 'canvas-placeholder';
+            placeholder.innerHTML = `
+                <p>Componente vuoto</p>
+                <p class="sub-text">Aggiungi elementi usando la toolbar sopra (testo, immagini, pulsanti, sezioni)</p>
+            `;
+            this.canvas.appendChild(placeholder);
+            this.canvas.style.height = '800px';
+        }
     }
 
     /**
@@ -461,12 +527,20 @@ export class CanvasManager {
         const snappedX = this.showGrid ? Math.round(newX / this.gridSize) * this.gridSize : newX;
         const snappedY = this.showGrid ? Math.round(newY / this.gridSize) * this.gridSize : newY;
 
-        this.dataManager.updateElement(this.currentPageId, elementId, {
-            x: snappedX,
-            y: snappedY
-        });
-
-        this.render();
+        // Update in component or page
+        if (this.currentComponentId) {
+            this.componentManager.updateComponentElement(this.currentComponentId, elementId, {
+                x: snappedX,
+                y: snappedY
+            });
+            this.renderComponent();
+        } else {
+            this.dataManager.updateElement(this.currentPageId, elementId, {
+                x: snappedX,
+                y: snappedY
+            });
+            this.render();
+        }
     }
 
     /**
@@ -533,11 +607,20 @@ export class CanvasManager {
      */
     deleteSelected() {
         this.selectedElements.forEach(elementId => {
-            this.dataManager.deleteElement(this.currentPageId, elementId);
+            if (this.currentComponentId) {
+                this.componentManager.deleteComponentElement(this.currentComponentId, elementId);
+            } else {
+                this.dataManager.deleteElement(this.currentPageId, elementId);
+            }
         });
 
         this.selectedElements.clear();
-        this.render();
+
+        if (this.currentComponentId) {
+            this.renderComponent();
+        } else {
+            this.render();
+        }
     }
 
     /**
@@ -588,6 +671,14 @@ export class CanvasManager {
             y: properties.y || 50
         };
 
+        // Se siamo in modalità editing componente, aggiungi al componente
+        if (this.currentComponentId) {
+            const result = this.componentManager.addElementToComponent(this.currentComponentId, element);
+            this.renderComponent(); // Ri-renderizza il componente
+            return result;
+        }
+
+        // Altrimenti aggiungi alla pagina
         return this.dataManager.addElement(this.currentPageId, element);
     }
 }

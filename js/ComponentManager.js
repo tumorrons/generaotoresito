@@ -79,6 +79,29 @@ export class ComponentManager {
     }
 
     /**
+     * Aggiunge un elemento al componente
+     */
+    addElementToComponent(componentId, element) {
+        const component = this.getComponent(componentId);
+        if (!component) return null;
+
+        if (!component.elements) {
+            component.elements = [];
+        }
+
+        const newElement = {
+            ...element,
+            id: element.id || this.dataManager.generateId(),
+            zIndex: element.zIndex || component.elements.length
+        };
+
+        component.elements.push(newElement);
+        this.dataManager.markModified();
+
+        return newElement;
+    }
+
+    /**
      * Aggiorna un elemento nel componente
      */
     updateComponentElement(componentId, elementId, updates) {
@@ -88,6 +111,20 @@ export class ComponentManager {
         const element = component.elements.find(el => el.id === elementId);
         if (element) {
             Object.assign(element, updates);
+            this.dataManager.markModified();
+        }
+    }
+
+    /**
+     * Elimina un elemento dal componente
+     */
+    deleteComponentElement(componentId, elementId) {
+        const component = this.getComponent(componentId);
+        if (!component) return;
+
+        const index = component.elements.findIndex(el => el.id === elementId);
+        if (index !== -1) {
+            component.elements.splice(index, 1);
             this.dataManager.markModified();
         }
     }

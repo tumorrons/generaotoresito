@@ -276,8 +276,12 @@ export class UIController {
      * Modifica un componente
      */
     editComponent(componentId) {
-        this.showNotification('Funzione in sviluppo', 'info');
-        // TODO: Implementare editor componente
+        // Carica il componente nel canvas manager in modalità editing
+        this.app.canvasManager.loadComponent(componentId);
+        this.showNotification('Modalità editing componente', 'info');
+
+        // Cambia al canvas per mostrare l'editor
+        // (L'utente può tornare alla pagina cliccando su una pagina nel pannello)
     }
 
     /**
