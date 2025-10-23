@@ -69,6 +69,9 @@ export class CanvasManager {
         // Apply background
         this.applyBackground(page.background);
 
+        // Calculate Y offset for elements
+        this.calculateYOffset(page);
+
         // Render elements sorted by z-index
         const sortedElements = this.layerManager.getLayersSorted(this.currentPageId);
 
@@ -104,6 +107,32 @@ export class CanvasManager {
     }
 
     /**
+     * Calcola l'offset Y necessario per gli elementi
+     */
+    calculateYOffset(page) {
+        this.yOffset = 0;
+
+        if (!page.elements || page.elements.length === 0) {
+            return;
+        }
+
+        const MARGIN = 50;
+        let minTop = 0;
+
+        page.elements.forEach(element => {
+            const top = element.y || 0;
+            if (top < minTop) {
+                minTop = top;
+            }
+        });
+
+        // Se ci sono elementi sopra lo 0, calcola l'offset
+        if (minTop < MARGIN) {
+            this.yOffset = Math.abs(minTop) + MARGIN;
+        }
+    }
+
+    /**
      * Aggiusta l'altezza del canvas in base al contenuto
      */
     adjustCanvasHeight(page) {
@@ -112,17 +141,21 @@ export class CanvasManager {
             return;
         }
 
-        // Trova il punto più basso tra tutti gli elementi
-        let maxBottom = 800; // Altezza minima
+        const MARGIN = 50;
+
+        // Trova il punto più basso tra tutti gli elementi (considerando l'offset)
+        let maxBottom = 800;
 
         page.elements.forEach(element => {
-            const bottom = (element.y || 0) + (element.height || 0) + 50; // +50px di margine
+            const adjustedY = (element.y || 0) + this.yOffset;
+            const bottom = adjustedY + (element.height || 0);
+
             if (bottom > maxBottom) {
                 maxBottom = bottom;
             }
         });
 
-        this.canvas.style.height = `${maxBottom}px`;
+        this.canvas.style.height = `${maxBottom + MARGIN}px`;
     }
 
     /**
@@ -134,8 +167,11 @@ export class CanvasManager {
         div.dataset.id = element.id;
         div.dataset.type = element.type;
 
+        // Applica l'offset Y per visualizzare elementi che vanno sopra lo 0
+        const adjustedY = (element.y || 0) + (this.yOffset || 0);
+
         div.style.left = `${element.x}px`;
-        div.style.top = `${element.y}px`;
+        div.style.top = `${adjustedY}px`;
         div.style.width = `${element.width}px`;
         div.style.height = `${element.height}px`;
         div.style.zIndex = element.zIndex || 0;
@@ -264,9 +300,18 @@ export class CanvasManager {
         if (el && el.locked) return;
 
         this.isDragging = true;
+
+        // Ottieni le coordinate relative al canvas
+        const rect = this.canvas.getBoundingClientRect();
+        const canvasX = e.clientX - rect.left;
+        const canvasY = e.clientY - rect.top;
+
+        // Salva l'offset del mouse rispetto alla posizione visuale dell'elemento
+        const adjustedY = el.y + (this.yOffset || 0);
+
         this.dragStartPos = {
-            x: e.clientX - el.x,
-            y: e.clientY - el.y
+            x: canvasX - el.x,
+            y: canvasY - adjustedY
         };
     }
 
@@ -297,8 +342,18 @@ export class CanvasManager {
         if (!this.isDragging || this.selectedElements.size === 0) return;
 
         const elementId = Array.from(this.selectedElements)[0];
-        const newX = e.clientX - this.dragStartPos.x;
-        const newY = e.clientY - this.dragStartPos.y;
+
+        // Coordinate relative al canvas
+        const rect = this.canvas.getBoundingClientRect();
+        const canvasX = e.clientX - rect.left;
+        const canvasY = e.clientY - rect.top;
+
+        // Calcola la nuova posizione
+        let newX = canvasX - this.dragStartPos.x;
+        let newY = canvasY - this.dragStartPos.y;
+
+        // Rimuovi l'offset Y per salvare la posizione reale nei dati
+        newY = newY - (this.yOffset || 0);
 
         // Snap to grid if enabled
         const snappedX = this.showGrid ? Math.round(newX / this.gridSize) * this.gridSize : newX;
